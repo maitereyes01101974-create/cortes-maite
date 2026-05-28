@@ -1,1 +1,219 @@
+<!-- ==================== AGREGAR ESTO EN EL HTML DEL PANEL ADMIN ==================== -->
+<!-- Dentro de <div id="adm-content">, después de <div id="tab-blk">, agregar: -->
 
+<div id="tab-cfg" style="display:none">
+  <h3>⚙️ Configuración</h3>
+  
+  <div style="background:#f9f9f9;padding:1rem;border-radius:8px;margin:.8rem 0">
+    <label style="display:block;font-weight:600;color:var(--p);margin-bottom:.5rem">⏰ Hora Apertura</label>
+    <select id="cfg-open" style="width:100%;padding:.6rem;border:2px solid #e0e0e0;border-radius:6px">
+      <option value="08:00">08:00</option>
+      <option value="09:00" selected>09:00</option>
+      <option value="10:00">10:00</option>
+    </select>
+  </div>
+  
+  <div style="background:#f9f9f9;padding:1rem;border-radius:8px;margin:.8rem 0">
+    <label style="display:block;font-weight:600;color:var(--p);margin-bottom:.5rem">⏰ Hora Cierre</label>
+    <select id="cfg-close" style="width:100%;padding:.6rem;border:2px solid #e0e0e0;border-radius:6px">
+      <option value="17:00">17:00</option>
+      <option value="18:00" selected>18:00</option>
+      <option value="19:00">19:00</option>
+      <option value="20:00">20:00</option>
+    </select>
+  </div>
+  
+  <div style="background:#f9f9f9;padding:1rem;border-radius:8px;margin:.8rem 0">
+    <label style="display:block;font-weight:600;color:var(--p);margin-bottom:.5rem">⏱️ Duración (min)</label>
+    <select id="cfg-dur" style="width:100%;padding:.6rem;border:2px solid #e0e0e0;border-radius:6px">
+      <option value="30" selected>30 min</option>
+      <option value="45">45 min</option>
+      <option value="60">60 min</option>
+    </select>
+  </div>
+  
+  <div style="background:#f9f9f9;padding:1rem;border-radius:8px;margin:.8rem 0">
+    <label style="display:block;font-weight:600;color:var(--p);margin-bottom:.5rem">📅 Días Laborables</label>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem">
+      <label><input type="checkbox" value="1" id="day-1" checked> Lun</label>
+      <label><input type="checkbox" value="2" id="day-2" checked> Mar</label>
+      <label><input type="checkbox" value="3" id="day-3" checked> Mié</label>
+      <label><input type="checkbox" value="4" id="day-4" checked> Jue</label>
+      <label><input type="checkbox" value="5" id="day-5" checked> Vie</label>
+      <label><input type="checkbox" value="6" id="day-6"> Sáb</label>
+    </div>
+  </div>
+  
+  <button class="btn" onclick="saveConfig()" style="background:var(--s);margin-top:.5rem">💾 Guardar Config</button>
+  
+  <div style="background:#f9f9f9;padding:1rem;border-radius:8px;margin:1.5rem 0">
+    <label style="display:block;font-weight:600;color:var(--p);margin-bottom:.5rem">💾 Backup</label>    <button class="btn" onclick="downloadBackup()" style="background:var(--s);margin-bottom:.5rem">📥 Descargar Backup</button>
+    <label style="display:block;background:var(--o);color:#fff;padding:.9rem;text-align:center;border-radius:6px;cursor:pointer">
+      📤 Restaurar Backup
+      <input type="file" accept=".json" onchange="restoreBackup(event)" style="display:none">
+    </label>
+  </div>
+</div>
+
+<!-- ==================== AGREGAR ESTO EN EL JAVASCRIPT ==================== -->
+<!-- Después de la línea: const meses=['Enero',...]; agregar: -->
+
+// Configuración por defecto
+let config = JSON.parse(localStorage.getItem('cm_config')) || {
+  open: '09:00', close: '18:00', dur: 30, days: [1,2,3,4,5,6]
+};
+
+<!-- ==================== REEMPLAZAR renderTimes() POR ESTA VERSIÓN ==================== -->
+
+function renderTimes(){
+  const g=document.getElementById('time-grid'); g.innerHTML='';
+  
+  // Generar horas según configuración
+  const horasGeneradas = [];
+  let [oh,om] = config.open.split(':').map(Number);
+  let [ch,cm] = config.close.split(':').map(Number);
+  let cur = oh*60+om, end = ch*60+cm;
+  while(cur < end) {
+    horasGeneradas.push(`${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')}`);
+    cur += config.dur;
+  }
+  
+  // Llenar select de bloqueo
+  const blkSelect = document.getElementById('blk-hour');
+  if(blkSelect) {
+    blkSelect.innerHTML = '<option value="">Selecciona hora...</option>' + 
+      horasGeneradas.map(h=>`<option value="${h}">${h}</option>`).join('');
+  }
+  
+  horasGeneradas.forEach(h=>{
+    const el=document.createElement('div'); el.className='slot'; el.textContent=h;
+    
+    // Verificación ROBUSTA de ocupado/bloqueado
+    const taken = citas.some(c => 
+      c.Fecha === selFecha && 
+      c.Hora === h && 
+      c.Estado !== 'rechazado'
+    );
+    const blocked = bloqs.some(b => 
+      b.Fecha === selFecha && 
+      b.Hora === h &&       b.Tipo === 'hora'
+    );
+    const dayBlocked = bloqs.some(b => 
+      b.Fecha === selFecha && 
+      b.Tipo === 'dia'
+    );
+    
+    if(taken) {
+      el.classList.add('taken');
+      el.title = 'Ocupado';
+    }
+    else if(blocked || dayBlocked) {
+      el.classList.add('blk');
+      el.title = 'Bloqueado';
+    }
+    else {
+      el.onclick = () => pickTime(h, el);
+    }
+    
+    if(selHora === h) el.classList.add('sel');
+    g.appendChild(el);
+  });
+}
+
+<!-- ==================== AGREGAR ESTAS FUNCIONES AL FINAL DEL SCRIPT ==================== -->
+
+// Guardar configuración
+async function saveConfig(){
+  config.open = document.getElementById('cfg-open').value;
+  config.close = document.getElementById('cfg-close').value;
+  config.dur = parseInt(document.getElementById('cfg-dur').value);
+  config.days = [];
+  for(let i=1;i<=6;i++){
+    if(document.getElementById('day-'+i).checked) config.days.push(i);
+  }
+  
+  localStorage.setItem('cm_config', JSON.stringify(config));
+  
+  try{
+    await fetch(API_URL, {
+      method:'POST',
+      body: new URLSearchParams({action:'saveConfig', config:JSON.stringify(config)})
+    });
+    setStatus('✅ Config guardada','ok');
+    renderCal();
+    if(selFecha) renderTimes();
+  }catch(e){
+    setStatus('✅ Guardado local','ok');
+  }
+}
+// Cargar configuración en admin
+function loadConfig(){
+  document.getElementById('cfg-open').value = config.open;
+  document.getElementById('cfg-close').value = config.close;
+  document.getElementById('cfg-dur').value = config.dur;
+  for(let i=1;i<=6;i++){
+    document.getElementById('day-'+i).checked = config.days.includes(i);
+  }
+}
+
+// Descargar backup
+function downloadBackup(){
+  const backup = {
+    citas: citas,
+    bloqs: bloqs,
+    config: config,
+    fecha: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backup,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup_cortes_maite_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  alert('✅ Backup descargado');
+}
+
+// Restaurar backup
+function restoreBackup(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev){
+    try{
+      const backup = JSON.parse(ev.target.result);
+      if(!confirm('¿Restaurar datos?')) return;
+      
+      if(backup.citas) { citas = backup.citas; localStorage.setItem('cm_citas',JSON.stringify(citas)); }
+      if(backup.bloqs) { bloqs = backup.bloqs; localStorage.setItem('cm_bloqs',JSON.stringify(bloqs)); }
+      if(backup.config) { config = backup.config; localStorage.setItem('cm_config',JSON.stringify(config)); }
+      
+      renderCal();
+      if(isAdmin) { renderAdmin(); renderBlocks(); loadConfig(); }
+      alert('✅ Datos restaurados');
+    }catch(err){ alert('❌ Error: '+err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+<!-- ==================== MODIFICAR showTab() PARA INCLUIR CFG ==================== -->
+
+function showTab(t){
+  document.getElementById('tab-citas').style.display = t=='citas' ? 'block' : 'none';
+  document.getElementById('tab-blk').style.display = t=='blk' ? 'block' : 'none';
+  document.getElementById('tab-cfg').style.display = t=='cfg' ? 'block' : 'none'; // ← AGREGAR ESTA LÍNEA
+  
+  if(t=='citas') renderAdmin();
+  if(t=='blk') renderBlocks();
+  if(t=='cfg') loadConfig(); // ← AGREGAR ESTA LÍNEA
+}
+
+<!-- ==================== MODIFICAR fetchData() PARA CARGAR CONFIG ==================== -->
+
+// Dentro de fetchData(), después de: bloqs=d2.bloqueos||[]; agregar:
+if(d1.config) { config = {...config, ...JSON.parse(d1.config)}; localStorage.setItem('cm_config',JSON.stringify(config)); }
+
+<!-- ==================== AGREGAR BOTÓN CFG EN LA BARRA DE TABS ==================== -->
+
+<!-- En la sección de tabs del admin, agregar el botón Config: -->
+<!-- Buscar: <button class="btn" style="background:var(--s)" onclick="refreshData()">🔄 Actualizar</button> -->
+<!-- Y ANTES de ese botón, agregar: -->
+<button class="btn" style="background:var(--s)" onclick="showTab('cfg')">⚙️ Config</button>
