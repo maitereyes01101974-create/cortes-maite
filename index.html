@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortes Maite</title>
+<style>
+body{font-family:Arial,sans-serif;background:#fce4ec;margin:0;padding:20px}
+h1{color:#c2185b;text-align:center;margin:20px 0}
+.cal{background:#fff;max-width:400px;margin:0 auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.cal-h{background:#c2185b;color:#fff;padding:15px;text-align:center;font-size:1.2rem;font-weight:bold}
+.cal-d{display:grid;grid-template-columns:repeat(7,1fr);background:#f5f5f5;padding:10px;font-weight:bold;font-size:12px;text-align:center}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:15px;background:#fff}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+.day:hover{background:#f8bbd0}
+.day.sel{background:#c2185b;color:#fff}
+.day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed}
+.day.today{border-color:#ff6f00;border-width:3px}
+</style>
+</head>
+<body>
+
+<h1>💇‍♀️ Cortes Maite</h1>
+
+<div class="cal">
+    <div class="cal-h" id="calHead">Cargando...</div>
+    <div class="cal-d">
+        <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+    </div>
+    <div class="cal-g" id="calGrid">
+        <!-- Los días se generan aquí -->
+    </div>
+</div>
+
+<script>
+(function() {
+    console.log('=== INICIANDO SISTEMA ===');
+    
+    let month = new Date().getMonth();
+    let year = new Date().getFullYear();
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    
+    function render() {
+        console.log('Renderizando calendario...');
+        
+        const grid = document.getElementById('calGrid');
+        const head = document.getElementById('calHead');
+        
+        if (!grid) {
+            console.error('ERROR: No existe calGrid');            return;
+        }
+        if (!head) {
+            console.error('ERROR: No existe calHead');
+            return;
+        }
+        
+        console.log('Elementos encontrados OK');
+        
+        grid.innerHTML = '';
+        head.textContent = months[month] + ' ' + year;
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        console.log('Primer día:', firstDay, 'Días:', daysInMonth);
+        
+        // Espacios vacíos
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'day';
+            empty.style.visibility = 'hidden';
+            grid.appendChild(empty);
+        }
+        
+        // Días
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateObj = new Date(year, month, d);
+            const dayEl = document.createElement('div');
+            dayEl.className = 'day';
+            dayEl.textContent = d;
+            
+            if (dateObj < today) {
+                dayEl.classList.add('past');
+            } else if (dateObj.getTime() === today.getTime()) {
+                dayEl.classList.add('today');
+            }
+            
+            dayEl.onclick = function() {
+                alert('Día ' + d + ' de ' + months[month]);
+            };
+            
+            grid.appendChild(dayEl);
+        }
+        
+        console.log('✓ Calendario renderizado con', daysInMonth, 'días');
+    }    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', render);
+    } else {
+        render();
+    }
+    
+    console.log('=== SISTEMA LISTO ===');
+})();
+</script>
+
+</body>
+</html>
