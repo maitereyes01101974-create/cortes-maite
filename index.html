@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortes Maite</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#fce4ec;padding:20px}
+header{background:#c2185b;color:#fff;padding:15px;text-align:center}
+.cal{background:#fff;max-width:400px;margin:20px auto;border-radius:10px;overflow:hidden}
+.cal-h{background:#c2185b;color:#fff;padding:15px;text-align:center}
+.cal-d{display:grid;grid-template-columns:repeat(7,1fr);background:#f5f5f5;padding:10px;font-weight:bold;font-size:12px;text-align:center}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:15px}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;border-radius:5px;cursor:pointer}
+.day:hover{background:#f8bbd0}
+.day.sel{background:#c2185b;color:#fff}
+.day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed}
+.day.blk{background:#ffcdd2;color:#c62828;text-decoration:line-through}
+</style>
+</head>
+<body>
+
+<header><h1>💇‍♀️ Cortes Maite</h1></header>
+
+<div class="cal">
+    <div class="cal-h" id="cal-h">Cargando...</div>
+    <div class="cal-d"><div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div></div>
+    <div class="cal-g" id="cal-g"></div>
+</div>
+
+<script>
+const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let m=new Date().getMonth(), y=new Date().getFullYear();
+
+function render(){
+    const h=document.getElementById('cal-h');
+    const g=document.getElementById('cal-g');
+    if(!h||!g){console.log('Esperando...');return;}
+    
+    h.textContent=meses[m]+' '+y;
+    g.innerHTML='';
+    
+    const fd=new Date(y,m,1).getDay();
+    const dim=new Date(y,m+1,0).getDate();
+    
+    for(let i=0;i<fd;i++){
+        const e=document.createElement('div');
+        e.className='day';
+        e.style.visibility='hidden';
+        g.appendChild(e);
+    }
+    
+    for(let d=1;d<=dim;d++){
+        const el=document.createElement('div');
+        el.className='day';
+        el.textContent=d;
+        el.onclick=function(){alert('Día '+d);};
+        g.appendChild(el);
+    }
+}
+
+// Ejecutar inmediatamente
+render();
+
+// Reintentar si falló
+setTimeout(render,100);
+setTimeout(render,500);
+</script>
+
+</body>
+</html>
