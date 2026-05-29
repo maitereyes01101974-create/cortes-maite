@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortes Maite - Reserva tu cita</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:#fce4ec;padding-bottom:20px}
+header{background:#c2185b;color:#fff;padding:15px;text-align:center}
+h1{font-size:1.2rem}
+.container{max-width:600px;margin:20px auto;padding:0 15px}
+.cal{background:#fff;border-radius:10px;overflow:hidden;margin-bottom:20px}
+.cal-h{background:#c2185b;color:#fff;padding:15px;text-align:center;display:flex;justify-content:space-between;align-items:center}
+.cal-h button{background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer}
+.cal-d{display:grid;grid-template-columns:repeat(7,1fr);background:#f5f5f5;padding:10px;font-weight:bold;font-size:12px;text-align:center}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:15px}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;border-radius:5px;cursor:pointer;font-size:14px}
+.day:hover:not(.past):not(.blk){background:#f8bbd0}
+.day.sel{background:#c2185b;color:#fff}
+.day.today{border:2px solid #ff6f00}
+.day.past{background:#f5f5f5;color:#ccc;cursor:not-allowed}
+.day.blk{background:#ffcdd2;color:#c62828;text-decoration:line-through;cursor:not-allowed}
+.section{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px;display:none}
+.section.active{display:block}
+.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.time{padding:10px;text-align:center;background:#fff;border:2px solid #f8bbd0;border-radius:8px;cursor:pointer}
+.time:hover:not(.taken):not(.blk){background:#f8bbd0}
+.time.sel{background:#c2185b;color:#fff;border-color:#c2185b}
+.time.taken{background:#ffcdd2;color:#c62828;text-decoration:line-through;cursor:not-allowed}
+.time.blk{background:#e0e0e0;color:#999;cursor:not-allowed}
+input,select{width:100%;padding:10px;margin:5px 0;border:2px solid #e0e0e0;border-radius:8px}
+.btn{width:100%;padding:12px;background:#c2185b;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;margin-top:10px}
+.admin-btn{position:fixed;top:10px;right:10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;padding:5px 10px;border-radius:15px;font-size:12px;cursor:pointer}
+#admin{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fce4ec;z-index:100;overflow-y:auto}
+.adm-hdr{background:#37474f;color:#fff;padding:15px;display:flex;justify-content:space-between;align-items:center}
+.adm-hdr button{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:8px 15px;border-radius:20px;cursor:pointer}
+.adm-tabs{display:flex;background:#fff;overflow-x:auto}
+.adm-tab{flex:1;padding:12px 8px;border:none;background:#fff;cursor:pointer;font-size:12px;border-bottom:3px solid transparent;white-space:nowrap}
+.adm-tab.act{color:#c2185b;border-bottom-color:#c2185b;background:#fce4ec}
+.adm-content{padding:15px;display:none}
+.adm-content.act{display:block}
+.card{background:#fff;padding:12px;margin:10px 0;border-radius:10px;border-left:4px solid #f57f17;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.card.conf{border-left-color:#2e7d32;background:#e8f5e9}
+.card.rej{border-left-color:#c62828;background:#ffebee}
+.badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:11px;background:#fff3e0;color:#f57f17}
+.badge.conf{background:#e8f5e9;color:#2e7d32}
+.badge.rej{background:#ffebee;color:#c62828}
+.act-row{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.act-btn{padding:5px 10px;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:12px}.act-btn.green{background:#2e7d32}
+.act-btn.red{background:#c62828}
+.act-btn.blue{background:#1976d2}
+.act-btn.gray{background:#757575}
+.cfg-card{background:#fff;padding:15px;border-radius:10px;margin:10px 0;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.cfg-card label{font-weight:bold;color:#c2185b;display:block;margin-bottom:5px}
+.days-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.day-check{display:flex;align-items:center;gap:5px;background:#f9f9f9;padding:8px;border-radius:4px}
+.day-check input{width:auto;margin:0}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:15px 0}
+.stat-card{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.stat-num{display:block;font-size:2rem;font-weight:bold;color:#c2185b}
+.stat-label{font-size:12px;color:#757575}
+.stat-rate{text-align:center;padding:10px;background:#f8bbd0;border-radius:10px;margin-bottom:15px;font-weight:bold;color:#c2185b}
+.blk-card{background:#fff;padding:12px;border-radius:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;z-index:300;display:none}
+.toast.show{display:block}
+.toast.ok{background:#2e7d32}
+.toast.err{background:#c62828}
+.login-box{text-align:center;padding:30px 15px}
+.login-box input{margin:15px 0}
+.stat-bar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:14px}
+.stat-bar span:first-child{width:80px}
+.bar-bg{flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:#c2185b;border-radius:4px}
+.stat-item{background:#f9f9f9;padding:10px;border-radius:8px;margin:8px 0;border-left:3px solid #757575}
+.stat-item.conf{border-left-color:#2e7d32;background:#e8f5e9}
+.stat-item.rej{border-left-color:#c62828;background:#ffebee}
+.filter-row{display:flex;gap:8px;margin:10px 0}
+.filter-row input,.filter-row select{flex:1}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>💇‍♀️ Cortes Maite</h1>
+    <p>Reserva tu cita</p>
+    <button class="admin-btn" id="adminBtn" onclick="showAdmin()" style="display:none">🔒 Admin</button>
+</header>
+
+<div class="container">
+    <div class="cal">
+        <div class="cal-h">
+            <button onclick="prevMonth()">‹</button>
+            <h3 id="cal-h">Cargando...</h3>
+            <button onclick="nextMonth()">›</button>
+        </div>
+        <div class="cal-d"><div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div></div>
+        <div class="cal-g" id="cal-g"></div>
+    </div>
+    <div class="section" id="time-sec">
+        <h2>🕐 Selecciona hora</h2>
+        <p id="date-text" style="margin:10px 0;color:#c2185b;font-weight:bold"></p>
+        <div class="time-grid" id="time-grid"></div>
+    </div>
+
+    <div class="section" id="form-sec">
+        <h2>✍️ Tus datos</h2>
+        <input type="text" id="name" placeholder="Nombre completo">
+        <input type="tel" id="phone" placeholder="Teléfono">
+        <select id="service">
+            <option value="">Selecciona servicio...</option>
+            <option>Corte</option><option>Tinte</option><option>Decoloración</option><option>Peinado</option><option>Tratamiento</option><option>Otro</option>
+        </select>
+        <button class="btn" onclick="book()">✅ Reservar Cita</button>
+    </div>
+
+    <div class="section" id="ok-sec">
+        <h2 style="text-align:center;color:#2e7d32">✅ ¡Reserva Enviada!</h2>
+        <p style="text-align:center;margin:15px 0">Maite te contactará por WhatsApp</p>
+        <button class="btn" style="background:#757575" onclick="reset()">Nueva Reserva</button>
+    </div>
+</div>
+
+<div id="admin">
+    <div class="adm-hdr">
+        <button onclick="closeAdmin()">← Volver</button>
+        <span>⚙️ Panel Maite</span>
+        <button onclick="logout()" style="background:#c62828">Salir</button>
+    </div>
+    <div id="login-section" class="login-box">
+        <h2>🔑 Acceso Admin</h2>
+        <input type="password" id="adminPass" placeholder="Contraseña: Maite2026">
+        <button class="btn" onclick="login()">Entrar</button>
+    </div>
+    <div id="admin-main" style="display:none">
+        <div class="adm-tabs">
+            <button class="adm-tab act" onclick="showTab('citas',this)">📋 Citas</button>
+            <button class="adm-tab" onclick="showTab('bloq',this)">🚫 Bloqueos</button>
+            <button class="adm-tab" onclick="showTab('stats',this)">📊 Stats</button>
+            <button class="adm-tab" onclick="showTab('cfg',this)">️ Config</button>
+        </div>
+        <div id="tab-citas" class="adm-content act"><h3>Citas registradas</h3><div id="apptList"></div></div>
+        <div id="tab-bloq" class="adm-content">
+            <div class="cfg-card"><h4>Bloquear día completo</h4><input type="date" id="blockDate"><button class="btn" style="background:#c62828" onclick="blockDay()">Bloquear Día</button></div>
+            <div class="cfg-card"><h4>Bloquear hora específica</h4><input type="date" id="blockDateHour"><select id="blockHourSelect"><option value="">Selecciona hora...</option></select><button class="btn" style="background:#f57f17" onclick="blockHour()">Bloquear Hora</button></div>
+            <h4 style="margin-top:15px">Bloqueos activos</h4><div id="blockList"></div>
+        </div>
+        <div id="tab-stats" class="adm-content">            <h3> Estadísticas del Negocio</h3>
+            <div class="stat-rate" id="statRate">Tasa: 0%</div>
+            <div class="stats-grid">
+                <div class="stat-card"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Total Reservas</span></div>
+                <div class="stat-card"><span class="stat-num" id="statPend">0</span><span class="stat-label">Pendientes</span></div>
+                <div class="stat-card"><span class="stat-num" id="statConf">0</span><span class="stat-label">Confirmadas</span></div>
+                <div class="stat-card"><span class="stat-num" id="statRej">0</span><span class="stat-label">Rechazadas</span></div>
+                <div class="stat-card"><span class="stat-num" id="statBlkDays">0</span><span class="stat-label">Días Bloqueados</span></div>
+                <div class="stat-card"><span class="stat-num" id="statBlkHours">0</span><span class="stat-label">Horas Bloqueadas</span></div>
+            </div>
+            <div class="filter-row">
+                <input type="text" id="searchName" placeholder="🔍 Buscar por nombre..." oninput="renderStats()">
+                <select id="filterStatus" onchange="renderStats()">
+                    <option value="all">Todos los estados</option>
+                    <option value="pending">Pendientes</option>
+                    <option value="confirmed">Confirmadas</option>
+                    <option value="rejected">Rechazadas</option>
+                </select>
+            </div>
+            <div class="cfg-card"><label>️ Reservas por Servicio</label><div id="serviceStats"></div></div>
+            <div class="cfg-card"><label>📅 Actividad por Mes</label><div id="monthStats"></div></div>
+            <div class="cfg-card"><label>📋 Listado Detallado</label><div id="detailedList"></div></div>
+        </div>
+        <div id="tab-cfg" class="adm-content">
+            <h3>⚙️ Configuración</h3>
+            <div class="cfg-card"><label> Hora de Apertura</label><select id="cfgOpen" onchange="saveConfig()"><option value="08:00">08:00</option><option value="09:00" selected>09:00</option><option value="10:00">10:00</option></select></div>
+            <div class="cfg-card"><label>⏰ Hora de Cierre</label><select id="cfgClose" onchange="saveConfig()"><option value="17:00">17:00</option><option value="18:00" selected>18:00</option><option value="19:00">19:00</option><option value="20:00">20:00</option></select></div>
+            <div class="cfg-card"><label>⏱️ Duración por Cita (minutos)</label><select id="cfgDur" onchange="saveConfig()"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="90">90 min</option></select></div>
+            <div class="cfg-card"><label>📅 Días Laborables</label><div class="days-grid">
+                <label class="day-check"><input type="checkbox" value="1" id="day1" checked onchange="saveConfig()"> Lun</label>
+                <label class="day-check"><input type="checkbox" value="2" id="day2" checked onchange="saveConfig()"> Mar</label>
+                <label class="day-check"><input type="checkbox" value="3" id="day3" checked onchange="saveConfig()"> Mié</label>
+                <label class="day-check"><input type="checkbox" value="4" id="day4" checked onchange="saveConfig()"> Jue</label>
+                <label class="day-check"><input type="checkbox" value="5" id="day5" checked onchange="saveConfig()"> Vie</label>
+                <label class="day-check"><input type="checkbox" value="6" id="day6" onchange="saveConfig()"> Sáb</label>
+            </div></div>
+            <div class="cfg-card">
+                <label>💾 Copia de Seguridad</label>
+                <p style="font-size:12px;color:#757575;margin-bottom:10px">Exporta tus datos para tenerlos a salvo.</p>
+                <button class="btn" style="background:#2e7d32" onclick="downloadBackup()">📥 Descargar Backup</button>
+                <label style="display:block;background:#1976d2;color:#fff;padding:12px;text-align:center;border-radius:8px;cursor:pointer;margin-top:10px">📤 Restaurar Backup<input type="file" accept=".json" onchange="restoreBackup(event)" style="display:none"></label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// DATOSlet month = new Date().getMonth();
+let year = new Date().getFullYear();
+let selDate = null;
+let selTime = null;
+let admin = false;
+let citas = [];
+let bloqueos = [];
+let config = {open:'09:00', close:'18:00', dur:45, days:[1,2,3,4,5,6]};
+
+// Carga segura
+try {
+    if(localStorage.getItem('cortes_citas')) citas = JSON.parse(localStorage.getItem('cortes_citas'));
+    if(localStorage.getItem('cortes_bloqueos')) bloqueos = JSON.parse(localStorage.getItem('cortes_bloqueos'));
+    if(localStorage.getItem('cortes_config')) config = JSON.parse(localStorage.getItem('cortes_config'));
+} catch(e) {}
+
+const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function getHours() {
+    const hours = [];
+    const [oh, om] = config.open.split(':').map(Number);
+    const [ch, cm] = config.close.split(':').map(Number);
+    let cur = oh * 60 + om;
+    const end = ch * 60 + cm;
+    while(cur < end) {
+        hours.push(String(Math.floor(cur/60)).padStart(2,'0') + ':' + String(cur%60).padStart(2,'0'));
+        cur += config.dur;
+    }
+    return hours;
+}
+
+function saveData() {
+    localStorage.setItem('cortes_citas', JSON.stringify(citas));
+    localStorage.setItem('cortes_bloqueos', JSON.stringify(bloqueos));
+    localStorage.setItem('cortes_config', JSON.stringify(config));
+}
+
+function toast(msg, type='ok') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+
+// RENDER CALENDARIO
+function renderCal(){
+    const h = document.getElementById('cal-h');
+    const g = document.getElementById('cal-g');
+    if(!h || !g) return;
+        h.textContent = meses[month] + ' ' + year;
+    g.innerHTML = '';
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    for(let i=0; i<firstDay; i++){
+        const e = document.createElement('div');
+        e.className = 'day';
+        e.style.visibility = 'hidden';
+        g.appendChild(e);
+    }
+    
+    for(let d=1; d<=daysInMonth; d++){
+        const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const dateObj = new Date(year, month, d);
+        
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day';
+        dayEl.textContent = d;
+        
+        const isDayBlocked = bloqueos.some(b => b.date === dateStr && b.type === 'day');
+        const isWorkingDay = config.days.includes(dateObj.getDay());
+        
+        if(dateObj < today) dayEl.classList.add('past');
+        else if(isDayBlocked) dayEl.classList.add('blk');
+        else if(!isWorkingDay) {
+            dayEl.classList.add('past');
+            dayEl.style.opacity = '0.5';
+        } else {
+            dayEl.onclick = function(){ selectDate(dateStr); };
+        }
+        
+        if(selDate === dateStr) dayEl.classList.add('sel');
+        if(dateObj.getTime() === today.getTime()) dayEl.classList.add('today');
+        
+        g.appendChild(dayEl);
+    }
+}
+
+function prevMonth(){ month--; if(month<0){month=11;year--;} renderCal(); }
+function nextMonth(){ month++; if(month>11){month=0;year++;} renderCal(); }
+
+function selectDate(ds){
+    selDate = ds; selTime = null;
+    renderCal();
+    const parts = ds.split('-');
+    document.getElementById('date-text').textContent = '📅 ' + parts[2] + ' de ' + meses[parseInt(parts[1])-1];    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('time-sec').classList.add('active');
+    renderTimes();
+}
+
+function renderTimes(){
+    const g = document.getElementById('time-grid');
+    if(!g) return;
+    g.innerHTML = '';
+    const hours = getHours();
+    hours.forEach(h => {
+        const el = document.createElement('div');
+        el.className = 'time';
+        el.textContent = h;
+        const taken = citas.some(c => c.date === selDate && c.time === h && c.status !== 'rejected');
+        const blocked = bloqueos.some(b => b.date === selDate && b.time === h);
+        const dayBlocked = bloqueos.some(b => b.date === selDate && b.type === 'day');
+        if(taken || blocked || dayBlocked) el.classList.add(taken ? 'taken' : 'blk');
+        else el.onclick = function(){ selectTime(h); };
+        if(selTime === h) el.classList.add('sel');
+        g.appendChild(el);
+    });
+    const sel = document.getElementById('blockHourSelect');
+    if(sel) sel.innerHTML = '<option value="">Selecciona...</option>' + hours.map(h=>`<option value="${h}">${h}</option>`).join('');
+}
+
+function selectTime(t){
+    selTime = t; renderTimes();
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('form-sec').classList.add('active');
+}
+
+function book(){
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const service = document.getElementById('service').value;
+    if(!name || !phone || !service){ alert('Completa todos los campos'); return; }
+    const taken = citas.some(c => c.date === selDate && c.time === selTime && c.status !== 'rejected');
+    const blocked = bloqueos.some(b => b.date === selDate && b.time === selTime);
+    const dayBlocked = bloqueos.some(b => b.date === selDate && b.type === 'day');
+    if(taken || blocked || dayBlocked){ alert('❌ Horario no disponible'); return; }
+    citas.push({id: Date.now().toString(), name, phone, service, date: selDate, time: selTime, status: 'pending'});
+    saveData();
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('ok-sec').classList.add('active');
+    document.getElementById('name').value=''; document.getElementById('phone').value=''; document.getElementById('service').value='';
+    renderCal();
+}
+
+function reset(){    selDate=null; selTime=null;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    renderCal();
+}
+
+// ADMIN
+function showAdmin(){ document.getElementById('admin').style.display='block'; }
+function closeAdmin(){
+    document.getElementById('admin').style.display='none';
+    document.getElementById('login-section').style.display='block';
+    document.getElementById('admin-main').style.display='none';
+   
