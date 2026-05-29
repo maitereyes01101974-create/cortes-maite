@@ -254,7 +254,23 @@ input,select{width:100%;padding:10px;margin:5px 0;border:2px solid #e0e0e0;borde
     </div>
 </div>
 
-<div id="toast" class="toast"></div>
+// INICIALIZACIÓN SEGURA (Esto hace que el calendario SÍ se vea)
+function initApp() {
+    if(window.location.search.includes('admin=true')){
+        const btn = document.getElementById('adminBtn');
+        if(btn) btn.style.display = 'block';
+    }
+    renderCal();
+}
+
+// Ejecutar varias veces para asegurar que cargue
+initApp();
+setTimeout(initApp, 100);
+setTimeout(initApp, 500);
+setTimeout(initApp, 1000);
+
+document.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('load', function(){ setTimeout(initApp, 50); });
 
 <script>
 // DATOS
